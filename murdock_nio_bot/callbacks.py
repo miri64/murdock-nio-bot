@@ -11,11 +11,11 @@ from nio import (
     UnknownEvent,
 )
 
-from my_project_name.bot_commands import Command
-from my_project_name.chat_functions import make_pill, react_to_event, send_text_to_room
-from my_project_name.config import Config
-from my_project_name.message_responses import Message
-from my_project_name.storage import Storage
+from murdock_nio_bot.bot_commands import Command
+from murdock_nio_bot.chat_functions import make_pill, react_to_event, send_text_to_room
+from murdock_nio_bot.config import Config
+from murdock_nio_bot.message_responses import Message
+from murdock_nio_bot.storage import Storage
 
 logger = logging.getLogger(__name__)
 

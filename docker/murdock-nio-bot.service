@@ -1,0 +1,16 @@
+[Unit]
+Description=A matrix bot that does amazing things!
+
+[Service]
+Type=simple
+User=murdock-nio-bot
+Group=murdock-nio-bot
+WorkingDirectory=/path/to/murdock-nio-bot/docker
+ExecStart=/usr/bin/docker-compose up murdock-nio-bot
+ExecStop=/usr/bin/docker-compose stop murdock-nio-bot
+RemainAfterExit=yes
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

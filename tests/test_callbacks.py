@@ -3,8 +3,8 @@ from unittest.mock import Mock
 
 import nio
 
-from my_project_name.callbacks import Callbacks
-from my_project_name.storage import Storage
+from murdock_nio_bot.callbacks import Callbacks
+from murdock_nio_bot.storage import Storage
 
 from tests.utils import make_awaitable, run_coroutine
 
