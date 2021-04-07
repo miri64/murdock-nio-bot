@@ -8,50 +8,31 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  schedule:
+    - cron: '0 0 * * *'
 
 jobs:
-  python_36:
-
+  tox:
     # We need to use 20.04 to get access to the libolm3 package
     runs-on: ubuntu-20.04
-
+    strategy:
+      max-parallel: 5
+      matrix:
+        python-version: [3.7, 3.8, 3.9]
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.6
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.6
-
-      - name: Install project dependencies
-        run: |
-          # Install libolm, required for end-to-end encryption functionality
-          sudo apt install -y libolm-dev libolm3
-          # Install python dependencies
-          python setup.py install
-
-      - name: Run unit tests
-        run: |
-          python -m unittest
-
-  python_39:
-
-    # We need to use 20.04 to get access to the libolm3 package
-    runs-on: ubuntu-20.04
-
-    steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python 3.9
+    - uses: actions/checkout@v1
+    - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
-        python-version: 3.9
-
+        python-version: ${{ matrix.python-version }}
     - name: Install project dependencies
       run: |
         # Install libolm, required for end-to-end encryption functionality
         sudo apt install -y libolm-dev libolm3
         # Install python dependencies
-        python setup.py install
-
-    - name: Run unit tests
+        python -m pip install --upgrade pip
+        python -m pip install tox
+    - name: Run tests
       run: |
-        python -m unittest
+        pyenv="py$(echo "${{ matrix.python-version }}" | tr -d '.')"
+        tox -e ${pyenv}
