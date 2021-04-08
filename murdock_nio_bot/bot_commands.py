@@ -73,7 +73,7 @@ class Command:
         if not self.args:
             text = (
                 "Hello, I am a bot made with matrix-nio! Use `help commands` to view "
-                "available commands."
+                "available commands. Edit me at https://github.com/miri64/murdock-nio-bot"
             )
             await send_text_to_room(self.client, self.room.room_id, text)
             return
