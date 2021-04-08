@@ -114,4 +114,7 @@ async def report_last_nightlies(client, branches):
                 send_text_to_room(client, room_id, msg, markdown_convert=True)
             )
         )
-    await asyncio.wait(tasks)
+    if tasks:
+        await asyncio.wait(tasks)
+    else:
+        logger.warning("I am in no rooms")
