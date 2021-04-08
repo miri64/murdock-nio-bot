@@ -1,17 +1,27 @@
 import datetime
 import logging
 
-from murdock_nio_bot.murdock import (
-    RESULT_URL,
-    Nightlies,
-    commit_markdown_link,
-    generate_message,
-)
+from murdock_nio_bot.murdock import Nightlies, commit_markdown_link, generate_message
+
+
+class MockConfig:
+    # use property to make sure the attributes are only read
+    @property
+    def nightlies_url(self):
+        return "https://ci.riot-os.org/RIOT-OS/RIOT/{branch}/nightlies.json"
+
+    @property
+    def result_url(self):
+        return "https://ci.riot-os.org/RIOT-OS/RIOT/{branch}/{commit}/output.html"
+
+    @property
+    def commit_url(self):
+        return "https://github.com/RIOT-OS/RIOT/commit/{commit}"
 
 
 def test_get_nightlies_real(caplog):
     with caplog.at_level(logging.ERROR):
-        nightlies = Nightlies("master").get_nightlies()
+        nightlies = Nightlies(MockConfig(), "master").get_nightlies()
     if len(nightlies) > 0:
         assert "commit" in nightlies[0]
         assert len(nightlies[0]["commit"]) == 40, "commit not full hash"
@@ -28,7 +38,7 @@ def test_get_nightlies_real(caplog):
 
 def test_check_if_last__empty(mocker):
     mocker.patch("murdock_nio_bot.murdock.Nightlies.get_nightlies", return_value=[])
-    res = Nightlies("master").check_if_last_errored_or_changed_to_passed()
+    res = Nightlies(MockConfig(), "master").check_if_last_errored_or_changed_to_passed()
     assert res is None
 
 
@@ -44,11 +54,12 @@ def test_check_if_last__errored(mocker):
             }
         ],
     )
-    res = Nightlies("master").check_if_last_errored_or_changed_to_passed()
+    config = MockConfig()
+    res = Nightlies(config, "master").check_if_last_errored_or_changed_to_passed()
     assert res["result"] == "errored"
     assert res["commit"] == exp_hash
     assert res["since"] == datetime.datetime(2021, 4, 7, 16, 30, 41)
-    assert res["url"] == RESULT_URL.format(branch="master", commit=exp_hash)
+    assert res["url"] == config.result_url.format(branch="master", commit=exp_hash)
 
 
 def test_check_if_last__passed1(mocker):
@@ -62,7 +73,7 @@ def test_check_if_last__passed1(mocker):
             },
         ],
     )
-    res = Nightlies("master").check_if_last_errored_or_changed_to_passed()
+    res = Nightlies(MockConfig(), "master").check_if_last_errored_or_changed_to_passed()
     assert res is None
 
 
@@ -82,7 +93,7 @@ def test_check_if_last__passed2(mocker):
             },
         ],
     )
-    res = Nightlies("master").check_if_last_errored_or_changed_to_passed()
+    res = Nightlies(MockConfig(), "master").check_if_last_errored_or_changed_to_passed()
     assert res is None
 
 
@@ -103,19 +114,21 @@ def test_check_if_last__passed_prev_errored(mocker):
             },
         ],
     )
-    res = Nightlies("master").check_if_last_errored_or_changed_to_passed()
+    config = MockConfig()
+    res = Nightlies(config, "master").check_if_last_errored_or_changed_to_passed()
     assert res["result"] == "passed"
     assert res["commit"] == exp_hash
     assert res["since"] == datetime.datetime(2021, 4, 7, 16, 30, 41)
-    assert res["url"] == RESULT_URL.format(branch="master", commit=exp_hash)
+    assert res["url"] == config.result_url.format(branch="master", commit=exp_hash)
 
 
 def test_commit_markdown_link():
-    res = commit_markdown_link("93ba8bea3bbd5c8c32d1ccc29ccdf7f86749c690")
-    assert (
-        res == "[93ba8bea3b](https://github.com/RIOT-OS/RIOT/commit/"
-        "93ba8bea3bbd5c8c32d1ccc29ccdf7f86749c690)"
+    config = MockConfig()
+    res = commit_markdown_link(config, "93ba8bea3bbd5c8c32d1ccc29ccdf7f86749c690")
+    exp_commit_url = config.commit_url.format(
+        commit="93ba8bea3bbd5c8c32d1ccc29ccdf7f86749c690"
     )
+    assert res == f"[93ba8bea3b]({exp_commit_url})"
 
 
 def test_generate_message():
@@ -139,7 +152,7 @@ def test_generate_message():
             },
         ),
     ]
-    msg = generate_message("Hello!", results)
+    msg = generate_message(MockConfig(), "Hello!", results)
     assert (
         msg
         == """Hello! Here is my morning report for the nightlies:

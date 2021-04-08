@@ -104,6 +104,11 @@ class Config:
         self.homeserver_url = self._get_cfg(["matrix", "homeserver_url"], required=True)
 
         self.command_prefix = self._get_cfg(["command_prefix"], default="!c") + " "
+        self.crontab = self._get_cfg(["murdock", "crontab"])
+        self.nightlies_branches = self._get_cfg(["murdock", "branches"], default=[])
+        self.nightlies_url = self._get_cfg(["murdock", "nightlies_url"])
+        self.result_url = self._get_cfg(["murdock", "result_url"])
+        self.commit_url = self._get_cfg(["murdock", "commit_url"])
 
     def _get_cfg(
         self,

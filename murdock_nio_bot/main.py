@@ -68,7 +68,7 @@ async def main():
     client.add_event_callback(callbacks.invite, (InviteMemberEvent,))
     client.add_event_callback(callbacks.decryption_failure, (MegolmEvent,))
     client.add_event_callback(callbacks.unknown, (UnknownEvent,))
-    aiocron.crontab("30 9 * * *", func=report_last_nightlies, args=(client, ["master"]))
+    aiocron.crontab(config.crontab, func=report_last_nightlies, args=(config, client))
 
     # Keep trying to reconnect on failure (with some time in-between)
     while True:

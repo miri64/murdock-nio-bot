@@ -21,6 +21,21 @@ matrix:
   # What to name the logged in device
   device_name: murdock-nio-bot
 
+murdock:
+  # when to report the nightlies, see https://github.com/kiorky/croniter for
+  # syntax
+  crontab: "0 8 * * *"
+  # for which branches to report the nightlies
+  branches:
+  - "master"
+  # Link to the nightlies JSON. May contain the branch as a format string
+  nightlies_url: "https://ci.riot-os.org/RIOT-OS/RIOT/{branch}/nightlies.json"
+  # Link to the results HTML. May contain the branch and the commit as a format
+  # string
+  result_url: "https://ci.riot-os.org/RIOT-OS/RIOT/{branch}/{commit}/output.html"
+  # Link to the commit on GitHub. May contain the commit as a format string
+  commit_url: "https://github.com/RIOT-OS/RIOT/commit/{commit}"
+
 storage:
   # The database connection string
   # For SQLite3, this would look like:

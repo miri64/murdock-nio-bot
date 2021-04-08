@@ -10,8 +10,6 @@ from .chat_functions import send_text_to_room
 
 logger = logging.getLogger(__name__)
 
-NIGHTLIES_URL = "https://ci.riot-os.org/RIOT-OS/RIOT/{branch}/nightlies.json"
-RESULT_URL = "https://ci.riot-os.org/RIOT-OS/RIOT/{branch}/{commit}/output.html"
 DEFAULT_BRANCH = "master"
 
 
@@ -22,14 +20,15 @@ class Nightlies:
     :param branch: the Git branch for which the nightlies are.
     """
 
-    def __init__(self, branch=DEFAULT_BRANCH):
+    def __init__(self, config, branch=DEFAULT_BRANCH):
         self.branch = branch
+        self.config = config
 
     def get_nightlies(self):
         """
         Get current list of nightlies
         """
-        nightlies_url = NIGHTLIES_URL.format(branch=self.branch)
+        nightlies_url = self.config.nightlies_url.format(branch=self.branch)
         request = requests.get(nightlies_url)
         if request.status_code != 200:
             logger.error(
@@ -60,49 +59,54 @@ class Nightlies:
             ):
                 result = results[0]
                 result["since"] = datetime.datetime.utcfromtimestamp(result["since"])
-                result["url"] = RESULT_URL.format(
+                result["url"] = self.config.result_url.format(
                     commit=result["commit"], branch=self.branch
                 )
                 return result
         return None
 
 
-def commit_markdown_link(commit):
+def commit_markdown_link(config, commit):
     """
     Generates a markdown link to GitHub from a commit hash
     """
-    return f"[{commit[:10]}](https://github.com/RIOT-OS/RIOT/commit/{commit})"
+    commit_url = config.commit_url.format(commit=commit)
+    return f"[{commit[:10]}]({commit_url})"
 
 
-def generate_message(greeting, results):
+def generate_message(config, greeting, results):
     """
     Generates a message from nightlies results
     """
     msg = f"{greeting} Here is my morning report for the nightlies:\n\n"
 
     for branch, result in [(b, r) for b, r in results if r["result"] == "passed"]:
-        commit_link = commit_markdown_link(result["commit"])
+        commit_link = commit_markdown_link(config, result["commit"])
         msg += (
             f'- [`{branch}` passed]({result["url"]}) on {commit_link} '
             f"after having errored last time\n"
         )
     for branch, result in [(b, r) for b, r in results if r["result"] == "errored"]:
-        commit_link = commit_markdown_link(result["commit"])
+        commit_link = commit_markdown_link(config, result["commit"])
         msg += f'- [`{branch}` errored]({result["url"]}) on {commit_link}'
     return msg
 
 
-async def report_last_nightlies(client, branches):
+async def report_last_nightlies(config, client):
     """
     Reports last nightlies to all rooms the bot is in
     """
     results = [
-        (branch, Nightlies(branch).check_if_last_errored_or_changed_to_passed())
-        for branch in branches
+        (branch, Nightlies(config, branch).check_if_last_errored_or_changed_to_passed())
+        for branch in config.nightlies_branches
     ]
     if all(result is None for _, result in results):
+        logger.info(
+            "Nothing to report for branches %s", ",".join(config.nightlies_branches)
+        )
         return
     msg = generate_message(
+        config,
         random.choice(("Hello", "Greetings", "Good Morning"))
         + random.choice((" RIOTers!", " fellow humans!", "!")),
         results,
