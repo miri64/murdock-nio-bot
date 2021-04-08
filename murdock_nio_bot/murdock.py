@@ -1,8 +1,12 @@
+import asyncio
 import datetime
 import json
 import logging
+import random
 
 import requests
+
+from .chat_functions import send_text_to_room
 
 logger = logging.getLogger(__name__)
 
@@ -61,3 +65,53 @@ class Nightlies:
                 )
                 return result
         return None
+
+
+def commit_markdown_link(commit):
+    """
+    Generates a markdown link to GitHub from a commit hash
+    """
+    return f"[{commit[:10]}](https://github.com/RIOT-OS/RIOT/commit/{commit})"
+
+
+def generate_message(greeting, results):
+    """
+    Generates a message from nightlies results
+    """
+    msg = f"{greeting} Here is my morning report for the nightlies:\n\n"
+
+    for branch, result in [(b, r) for b, r in results if r["result"] == "passed"]:
+        commit_link = commit_markdown_link(result["commit"])
+        msg += (
+            f'- [`{branch}` passed]({result["url"]}) on {commit_link} '
+            f"after having errored last time\n"
+        )
+    for branch, result in [(b, r) for b, r in results if r["result"] == "errored"]:
+        commit_link = commit_markdown_link(result["commit"])
+        msg += f'- [`{branch}` errored]({result["url"]}) on {commit_link}'
+    return msg
+
+
+async def report_last_nightlies(client, branches):
+    """
+    Reports last nightlies to all rooms the bot is in
+    """
+    results = [
+        (branch, Nightlies(branch).check_if_last_errored_or_changed_to_passed())
+        for branch in branches
+    ]
+    if all(result is None for _, result in results):
+        return
+    msg = generate_message(
+        random.choice(("Hello", "Greetings", "Good Morning"))
+        + random.choice((" RIOTers!", " fellow humans!", "!")),
+        results,
+    )
+    tasks = []
+    for room_id in client.rooms:
+        tasks.append(
+            asyncio.create_task(
+                send_text_to_room(client, room_id, msg, markdown_convert=True)
+            )
+        )
+    await asyncio.wait(tasks)

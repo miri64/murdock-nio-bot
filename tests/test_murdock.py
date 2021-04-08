@@ -1,7 +1,12 @@
 import datetime
 import logging
 
-from murdock_nio_bot.murdock import RESULT_URL, Nightlies
+from murdock_nio_bot.murdock import (
+    RESULT_URL,
+    Nightlies,
+    commit_markdown_link,
+    generate_message,
+)
 
 
 def test_get_nightlies_real(caplog):
@@ -103,3 +108,42 @@ def test_check_if_last__passed_prev_errored(mocker):
     assert res["commit"] == exp_hash
     assert res["since"] == datetime.datetime(2021, 4, 7, 16, 30, 41)
     assert res["url"] == RESULT_URL.format(branch="master", commit=exp_hash)
+
+
+def test_commit_markdown_link():
+    res = commit_markdown_link("93ba8bea3bbd5c8c32d1ccc29ccdf7f86749c690")
+    assert (
+        res == "[93ba8bea3b](https://github.com/RIOT-OS/RIOT/commit/"
+        "93ba8bea3bbd5c8c32d1ccc29ccdf7f86749c690)"
+    )
+
+
+def test_generate_message():
+    results = [
+        (
+            "master",
+            {
+                "result": "passed",
+                "url": "https://example.org/passed",
+                "commit": "11fadfcc9ddac1a6b5051cc93572fac6b9a9d838",
+                "since": 1617813041,
+            },
+        ),
+        (
+            "2020.07-branch",
+            {
+                "result": "errored",
+                "url": "https://example.org/errored",
+                "commit": "f9fa7382909d4a6096a2d79c0bb4d625ff8389f8",
+                "since": 1617726641,
+            },
+        ),
+    ]
+    msg = generate_message("Hello!", results)
+    assert (
+        msg
+        == """Hello! Here is my morning report for the nightlies:
+
+- [`master` passed](https://example.org/passed) on [11fadfcc9d](https://github.com/RIOT-OS/RIOT/commit/11fadfcc9ddac1a6b5051cc93572fac6b9a9d838) after having errored last time
+- [`2020.07-branch` errored](https://example.org/errored) on [f9fa738290](https://github.com/RIOT-OS/RIOT/commit/f9fa7382909d4a6096a2d79c0bb4d625ff8389f8)"""
+    )

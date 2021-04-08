@@ -31,6 +31,7 @@ setup(
     description="A matrix bot to do amazing things!",
     packages=find_packages(exclude=["tests", "tests.*"]),
     install_requires=[
+        "aiocron>=1.4",
         "matrix-nio[e2e]>=0.10.0",
         "Markdown>=3.1.1",
         "PyYAML>=5.1.2",

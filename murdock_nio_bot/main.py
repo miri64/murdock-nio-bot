@@ -4,6 +4,7 @@ import logging
 import sys
 from time import sleep
 
+import aiocron
 from aiohttp import ClientConnectionError, ServerDisconnectedError
 from nio import (
     AsyncClient,
@@ -18,6 +19,7 @@ from nio import (
 
 from murdock_nio_bot.callbacks import Callbacks
 from murdock_nio_bot.config import Config
+from murdock_nio_bot.murdock import report_last_nightlies
 from murdock_nio_bot.storage import Storage
 
 logger = logging.getLogger(__name__)
@@ -66,6 +68,7 @@ async def main():
     client.add_event_callback(callbacks.invite, (InviteMemberEvent,))
     client.add_event_callback(callbacks.decryption_failure, (MegolmEvent,))
     client.add_event_callback(callbacks.unknown, (UnknownEvent,))
+    aiocron.crontab("30 9 * * *", func=report_last_nightlies, args=(client, ["master"]))
 
     # Keep trying to reconnect on failure (with some time in-between)
     while True:
