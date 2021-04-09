@@ -190,7 +190,10 @@ class Callbacks:
 
             reacted_to = relation_dict.get("event_id")
             if reacted_to and relation_dict.get("rel_type") == "m.annotation":
-                await self._reaction(room, event, reacted_to)
+                # await self._reaction(room, event, reacted_to)
+                logger.debug(
+                    f"Got reaction event from {event.sender} in {room.room_id}"
+                )
                 return
 
         logger.debug(
