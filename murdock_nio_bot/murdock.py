@@ -48,10 +48,14 @@ class Nightlies:
         """
         Returns the latest nightly result of self.branch when it errored or
         changed from errored to passed compared to the nightly before. Returns
-        ``None`` if both conditions do not apply
+        ``None`` if both conditions do not apply or the two previous builds
+        have the same commit hash.
         """
         results = self.get_nightlies()
         if len(results) > 0:
+            if len(results) > 1 and results[0]["commit"] == results[1]["commit"]:
+                # do not double report already reported commits
+                return None
             if results[0]["result"] == "errored" or (
                 len(results) > 1
                 and results[1]["result"] == "errored"

@@ -62,6 +62,28 @@ def test_check_if_last__errored(mocker):
     assert res["url"] == config.result_url.format(branch="master", commit=exp_hash)
 
 
+def test_check_if_last__errored_same_commit(mocker):
+    exp_hash = "11fadfcc9ddac1a6b5051cc93572fac6b9a9d838"
+    mocker.patch(
+        "murdock_nio_bot.murdock.Nightlies.get_nightlies",
+        return_value=[
+            {
+                "result": "errored",
+                "commit": exp_hash,
+                "since": 1617813041,
+            },
+            {
+                "result": "errored",
+                "commit": exp_hash,
+                "since": 1617726641,
+            },
+        ],
+    )
+    config = MockConfig()
+    res = Nightlies(config, "master").check_if_last_errored_or_changed_to_passed()
+    assert res is None
+
+
 def test_check_if_last__passed1(mocker):
     mocker.patch(
         "murdock_nio_bot.murdock.Nightlies.get_nightlies",
