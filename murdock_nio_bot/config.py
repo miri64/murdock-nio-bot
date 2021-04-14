@@ -109,6 +109,16 @@ class Config:
         self.nightlies_url = self._get_cfg(["murdock", "nightlies_url"])
         self.result_url = self._get_cfg(["murdock", "result_url"])
         self.commit_url = self._get_cfg(["murdock", "commit_url"])
+        self.github_org = self._get_cfg(["murdock", "github", "org"], required=True)
+        self.github_repo = self._get_cfg(["murdock", "github", "repo"], required=True)
+        self.github_workflows = self._get_cfg(
+            ["murdock", "github_workflows"], default=[]
+        )
+        for workflow in self.github_workflows:
+            if "name" not in workflow:
+                raise ConfigError("Must supply a name with murdock.github_workflows")
+            if "report_xml" not in workflow:
+                workflow["report_xml"] = False
 
     def _get_cfg(
         self,

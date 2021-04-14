@@ -1,6 +1,9 @@
 import datetime
 import logging
 
+import pytest
+
+from murdock_nio_bot.github import WorkflowRun
 from murdock_nio_bot.murdock import Nightlies, commit_markdown_link, generate_message
 
 
@@ -153,8 +156,36 @@ def test_commit_markdown_link():
     assert res == f"[93ba8bea3b]({exp_commit_url})"
 
 
-def test_generate_message():
-    results = [
+@pytest.mark.parametrize(
+    "workflows",
+    [
+        None,
+        [
+            (
+                "release-tests",
+                WorkflowRun(
+                    MockConfig(),
+                    2485316784,
+                    "c89739f7f0a339ba22e8f5cc92ce74a4e0c99adc",
+                    "failure",
+                    "https://github.com/RIOT-OS/RIOT/actions/runs/2485316784",
+                ),
+            ),
+            (
+                "test-on-iotlab",
+                WorkflowRun(
+                    MockConfig(),
+                    1002909749,
+                    "584aa98d7afed1214dd7858fcfb742545d5c2fb2",
+                    "success",
+                    "https://github.com/RIOT-OS/RIOT/actions/runs/1002909749",
+                ),
+            ),
+        ],
+    ],
+)
+def test_generate_message(workflows):
+    nightlies = [
         (
             "master",
             {
@@ -174,12 +205,18 @@ def test_generate_message():
             },
         ),
     ]
-    msg = generate_message(MockConfig(), "Hello!", results)
-    assert (
-        msg
-        == """Hello! Here is my morning report for the nightlies:
+    exp_msg = "Hello! Here is my morning report for the nightlies"
 
-- [`master` passed](https://example.org/passed) on [11fadfcc9d](https://github.com/RIOT-OS/RIOT/commit/11fadfcc9ddac1a6b5051cc93572fac6b9a9d838) after having errored last time
-- [`2020.07-branch` errored](https://example.org/errored) on [f9fa738290](https://github.com/RIOT-OS/RIOT/commit/f9fa7382909d4a6096a2d79c0bb4d625ff8389f8)
-"""
-    )
+    if workflows:
+        exp_msg += " and GitHub workflows"
+    exp_msg += ":\n\n"
+
+    exp_msg += "- [`master` nightlies passed](https://example.org/passed) on [11fadfcc9d](https://github.com/RIOT-OS/RIOT/commit/11fadfcc9ddac1a6b5051cc93572fac6b9a9d838) after having errored last time\n"
+    if workflows:
+        exp_msg += "- [`test-on-iotlab` workflow passed](https://github.com/RIOT-OS/RIOT/actions/runs/1002909749) on [584aa98d7a](https://github.com/RIOT-OS/RIOT/commit/584aa98d7afed1214dd7858fcfb742545d5c2fb2) after having errored last time\n"
+    exp_msg += "- [`2020.07-branch` nightlies errored](https://example.org/errored) on [f9fa738290](https://github.com/RIOT-OS/RIOT/commit/f9fa7382909d4a6096a2d79c0bb4d625ff8389f8)\n"
+    if workflows:
+        exp_msg += "- [`release-tests` workflow errored](https://github.com/RIOT-OS/RIOT/actions/runs/2485316784) on [c89739f7f0](https://github.com/RIOT-OS/RIOT/commit/c89739f7f0a339ba22e8f5cc92ce74a4e0c99adc)\n"
+
+    msg = generate_message(MockConfig(), "Hello!", nightlies, workflows)
+    assert msg == exp_msg

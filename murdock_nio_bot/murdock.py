@@ -78,42 +78,75 @@ def commit_markdown_link(config, commit):
     return f"[{commit[:10]}]({commit_url})"
 
 
-def generate_message(config, greeting, results):
+def generate_message(config, greeting, nightlies, workflow_runs=None):
     """
     Generates a message from nightlies results
     """
-    msg = f"{greeting} Here is my morning report for the nightlies:\n\n"
+    if workflow_runs is None:
+        workflow_runs = []
+    if workflow_runs:
+        msg = f"{greeting} Here is my morning report for the nightlies and GitHub workflows:\n\n"
+    else:
+        msg = f"{greeting} Here is my morning report for the nightlies:\n\n"
 
-    for branch, result in [(b, r) for b, r in results if r["result"] == "passed"]:
+    for branch, result in [
+        (b, r) for b, r in nightlies if r and r["result"] == "passed"
+    ]:
         commit_link = commit_markdown_link(config, result["commit"])
         msg += (
-            f'- [`{branch}` passed]({result["url"]}) on {commit_link} '
+            f'- [`{branch}` nightlies passed]({result["url"]}) on {commit_link} '
             f"after having errored last time\n"
         )
-    for branch, result in [(b, r) for b, r in results if r["result"] == "errored"]:
+    for workflow, result in [
+        (w, r) for w, r in workflow_runs if r and r.conclusion == "success"
+    ]:
+        commit_link = commit_markdown_link(config, result.commit)
+        msg += (
+            f"- [`{workflow}` workflow passed]({result.html_url}) on {commit_link} "
+            f"after having errored last time\n"
+        )
+    for branch, result in [
+        (b, r) for b, r in nightlies if r and r["result"] == "errored"
+    ]:
         commit_link = commit_markdown_link(config, result["commit"])
-        msg += f'- [`{branch}` errored]({result["url"]}) on {commit_link}\n'
+        msg += f'- [`{branch}` nightlies errored]({result["url"]}) on {commit_link}\n'
+    for workflow, result in [
+        (w, r) for w, r in workflow_runs if r and r.conclusion == "failure"
+    ]:
+        commit_link = commit_markdown_link(config, result.commit)
+        msg += (
+            f"- [`{workflow}` workflow errored]({result.html_url}) on {commit_link}\n"
+        )
     return msg
 
 
-async def report_last_nightlies(config, client):
+async def report_last_nightlies(config, client, workflows=None):
     """
     Reports last nightlies to all rooms the bot is in
     """
-    results = [
+    nightlies = [
         (branch, Nightlies(config, branch).check_if_last_errored_or_changed_to_passed())
         for branch in config.nightlies_branches
     ]
-    if all(result is None for _, result in results):
+    workflow_runs = [
+        (workflow.name, workflow.check_if_last_errored_or_changed_to_passed())
+        for workflow in workflows or []
+    ]
+    if all(result is None for _, result in nightlies) and all(
+        result is None for _, result in workflow_runs
+    ):
         logger.info(
-            "Nothing to report for branches %s", ",".join(config.nightlies_branches)
+            "Nothing to report for branches %s or workflows %s",
+            ",".join(config.nightlies_branches),
+            ",".join(w.name for w in workflows),
         )
         return
     msg = generate_message(
         config,
         random.choice(("Hello", "Greetings", "Good Morning"))
         + random.choice((" RIOTers!", " fellow humans!", "!")),
-        results,
+        nightlies,
+        workflow_runs,
     )
     tasks = []
     for room_id in client.rooms:

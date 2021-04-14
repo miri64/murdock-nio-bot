@@ -33,6 +33,8 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install tox
     - name: Run tests
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         pyenv="py$(echo "${{ matrix.python-version }}" | tr -d '.')"
         tox -e ${pyenv}

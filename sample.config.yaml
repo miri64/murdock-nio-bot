@@ -35,6 +35,13 @@ murdock:
   result_url: "https://ci.riot-os.org/RIOT-OS/RIOT/{branch}/{commit}/output.html"
   # Link to the commit on GitHub. May contain the commit as a format string
   commit_url: "https://github.com/RIOT-OS/RIOT/commit/{commit}"
+  # The GitHub Repo
+  github:
+    org: 'RIOT-OS'
+    repo: 'RIOT'
+  # Names for which GitHub workflows to report.
+  github_workflows:
+  - name: 'release-tests'
 
 storage:
   # The database connection string

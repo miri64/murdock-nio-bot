@@ -8,7 +8,7 @@ from typing import Any, Dict
 # the version specified here.
 #
 # When a migration is performed, the `migration_version` table should be incremented.
-latest_migration_version = 0
+latest_migration_version = 1
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +89,14 @@ class Storage:
         )
 
         # Set up any other necessary database tables here
+        self._execute(
+            """
+            CREATE TABLE github_workflow (
+                id INTEGER PRIMARY KEY,
+                last_run_commit VARCHAR(40) DEFAULT NULL
+            )
+        """
+        )
 
         logger.info("Database setup complete")
 
@@ -102,15 +110,23 @@ class Storage:
         """
         logger.debug("Checking for necessary database migrations...")
 
-        # if current_migration_version < 1:
-        #    logger.info("Migrating the database from v0 to v1...")
-        #
-        #    # Add new table, delete old ones, etc.
-        #
-        #    # Update the stored migration version
-        #    self._execute("UPDATE migration_version SET version = 1")
-        #
-        #    logger.info("Database migrated to v1")
+        if current_migration_version < 1:
+            logger.info("Migrating the database from v0 to v1...")
+
+            # Add new table, delete old ones, etc.
+            self._execute(
+                """
+                CREATE TABLE github_workflow (
+                    id INTEGER PRIMARY KEY,
+                    last_run_commit VARCHAR(40) DEFAULT NULL
+                )
+            """
+            )
+
+            # Update the stored migration version
+            self._execute("UPDATE migration_version SET version = 1")
+
+            logger.info("Database migrated to v1")
 
     def _execute(self, *args) -> None:
         """A wrapper around cursor.execute that transforms placeholder ?'s to %s for postgres.
@@ -124,3 +140,25 @@ class Storage:
             self.cursor.execute(args[0].replace("?", "%s"), *args[1:])
         else:
             self.cursor.execute(*args)
+
+    def get_last_run_commit(self, workflow_id):
+        self._execute(
+            "SELECT last_run_commit FROM github_workflow WHERE id = ?",
+            (workflow_id,),
+        )
+        row = self.cursor.fetchone()
+        if row is None:
+            return None
+        return row[0]
+
+    def set_last_run_commit(self, workflow_id, last_run_commit):
+        if self.get_last_run_commit(workflow_id):
+            self._execute(
+                "UPDATE github_workflow SET last_run_commit = ? WHERE id = ?",
+                (last_run_commit, workflow_id),
+            )
+        else:
+            self._execute(
+                "INSERT INTO github_workflow (id, last_run_commit) " "VALUES (?, ?)",
+                (workflow_id, last_run_commit),
+            )

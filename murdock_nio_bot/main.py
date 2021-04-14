@@ -19,6 +19,7 @@ from nio import (
 
 from murdock_nio_bot.callbacks import Callbacks
 from murdock_nio_bot.config import Config
+from murdock_nio_bot.github import Workflow
 from murdock_nio_bot.murdock import report_last_nightlies
 from murdock_nio_bot.storage import Storage
 
@@ -68,7 +69,10 @@ async def main():
     client.add_event_callback(callbacks.invite, (InviteMemberEvent,))
     client.add_event_callback(callbacks.decryption_failure, (MegolmEvent,))
     client.add_event_callback(callbacks.unknown, (UnknownEvent,))
-    aiocron.crontab(config.crontab, func=report_last_nightlies, args=(config, client))
+    workflows = Workflow.fetch_workflows(config)
+    aiocron.crontab(
+        config.crontab, func=report_last_nightlies, args=(config, client, workflows)
+    )
 
     # Keep trying to reconnect on failure (with some time in-between)
     while True:

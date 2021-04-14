@@ -31,6 +31,7 @@ setup(
     description="A matrix bot to do amazing things!",
     packages=find_packages(exclude=["tests", "tests.*"]),
     install_requires=[
+        "agithub>=2.2",
         "aiocron>=1.4",
         "matrix-nio[e2e]>=0.10.0",
         "Markdown>=3.1.1",
