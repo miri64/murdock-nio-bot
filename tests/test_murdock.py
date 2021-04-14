@@ -180,5 +180,6 @@ def test_generate_message():
         == """Hello! Here is my morning report for the nightlies:
 
 - [`master` passed](https://example.org/passed) on [11fadfcc9d](https://github.com/RIOT-OS/RIOT/commit/11fadfcc9ddac1a6b5051cc93572fac6b9a9d838) after having errored last time
-- [`2020.07-branch` errored](https://example.org/errored) on [f9fa738290](https://github.com/RIOT-OS/RIOT/commit/f9fa7382909d4a6096a2d79c0bb4d625ff8389f8)"""
+- [`2020.07-branch` errored](https://example.org/errored) on [f9fa738290](https://github.com/RIOT-OS/RIOT/commit/f9fa7382909d4a6096a2d79c0bb4d625ff8389f8)
+"""
     )

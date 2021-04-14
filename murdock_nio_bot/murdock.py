@@ -92,7 +92,7 @@ def generate_message(config, greeting, results):
         )
     for branch, result in [(b, r) for b, r in results if r["result"] == "errored"]:
         commit_link = commit_markdown_link(config, result["commit"])
-        msg += f'- [`{branch}` errored]({result["url"]}) on {commit_link}'
+        msg += f'- [`{branch}` errored]({result["url"]}) on {commit_link}\n'
     return msg
 
 
